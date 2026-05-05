@@ -1,0 +1,1419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SkillSync AI — Multi-Agent Career Coach</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0a0e1a;
+    --surface: #111827;
+    --surface2: #1a2235;
+    --surface3: #1f2d45;
+    --accent: #4f9eff;
+    --accent2: #7c3aed;
+    --green: #10b981;
+    --amber: #f59e0b;
+    --red: #ef4444;
+    --pink: #ec4899;
+    --text: #f1f5f9;
+    --text2: #94a3b8;
+    --text3: #475569;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(79,158,255,0.25);
+    --radius: 12px;
+    --font-head: 'Syne', sans-serif;
+    --font-body: 'DM Sans', sans-serif;
+    --font-mono: 'DM Mono', monospace;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ---- HEADER ---- */
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 28px;
+    border-bottom: 1px solid var(--border);
+    background: rgba(10,14,26,0.95);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    backdrop-filter: blur(10px);
+  }
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: var(--font-head);
+    font-size: 20px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+  }
+  .logo-icon {
+    width: 32px; height: 32px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+  }
+  .logo span { color: var(--accent); }
+  .header-status {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    font-size: 12px;
+    color: var(--text2);
+    font-family: var(--font-mono);
+  }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.4;} }
+
+  /* ---- TABS ---- */
+  .tabs {
+    display: flex;
+    gap: 4px;
+    padding: 16px 28px 0;
+    border-bottom: 1px solid var(--border);
+    overflow-x: auto;
+  }
+  .tab {
+    padding: 10px 18px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text2);
+    cursor: pointer;
+    border-radius: 8px 8px 0 0;
+    border: 1px solid transparent;
+    border-bottom: none;
+    background: transparent;
+    transition: all 0.2s;
+    white-space: nowrap;
+    font-family: var(--font-body);
+  }
+  .tab:hover { color: var(--text); background: var(--surface2); }
+  .tab.active {
+    color: var(--accent);
+    background: var(--surface);
+    border-color: var(--border);
+    border-bottom-color: var(--surface);
+    margin-bottom: -1px;
+  }
+
+  /* ---- MAIN ---- */
+  .main { padding: 28px; max-width: 900px; margin: 0 auto; }
+  .section { display: none; }
+  .section.active { display: block; }
+
+  /* ---- CARDS ---- */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+  .card-title {
+    font-family: var(--font-head);
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text2);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .card-title span { font-size: 16px; }
+
+  /* ---- INPUTS ---- */
+  .form-group { margin-bottom: 16px; }
+  label { display: block; font-size: 13px; color: var(--text2); margin-bottom: 6px; font-weight: 500; }
+  textarea, input, select {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  textarea:focus, input:focus, select:focus { border-color: var(--accent); }
+  textarea { resize: vertical; min-height: 120px; }
+  select option { background: var(--surface); }
+
+  /* ---- BUTTONS ---- */
+  .btn {
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s;
+    font-family: var(--font-body);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .btn-primary {
+    background: linear-gradient(135deg, var(--accent), #2563eb);
+    color: #fff;
+  }
+  .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
+  .btn-secondary {
+    background: var(--surface2);
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+  .btn-secondary:hover { border-color: var(--accent); }
+  .btn-green { background: var(--green); color: #fff; }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important; }
+
+  /* ---- AGENT STATUS ---- */
+  .agents-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .agent-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    text-align: center;
+    transition: all 0.3s;
+  }
+  .agent-card.working { border-color: var(--accent); background: rgba(79,158,255,0.05); }
+  .agent-card.done { border-color: var(--green); background: rgba(16,185,129,0.05); }
+  .agent-icon { font-size: 28px; margin-bottom: 8px; }
+  .agent-name { font-family: var(--font-head); font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+  .agent-status { font-size: 11px; color: var(--text2); font-family: var(--font-mono); }
+  .agent-status.active { color: var(--accent); }
+  .agent-status.done { color: var(--green); }
+
+  /* ---- SCORE ---- */
+  .score-circle {
+    width: 120px; height: 120px;
+    border-radius: 50%;
+    background: conic-gradient(var(--accent) 0%, var(--accent) 0%, var(--surface3) 0%);
+    display: flex; align-items: center; justify-content: center;
+    position: relative;
+    margin: 0 auto 20px;
+    transition: background 1s;
+  }
+  .score-inner {
+    width: 88px; height: 88px;
+    border-radius: 50%;
+    background: var(--surface);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+  }
+  .score-num {
+    font-family: var(--font-head);
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--text);
+    line-height: 1;
+  }
+  .score-label { font-size: 10px; color: var(--text2); font-family: var(--font-mono); }
+
+  /* ---- SKILL TAGS ---- */
+  .tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+  .tag {
+    padding: 4px 12px;
+    border-radius: 100px;
+    font-size: 12px;
+    font-weight: 500;
+    font-family: var(--font-mono);
+  }
+  .tag-green { background: rgba(16,185,129,0.15); color: #34d399; border: 1px solid rgba(16,185,129,0.2); }
+  .tag-red { background: rgba(239,68,68,0.12); color: #f87171; border: 1px solid rgba(239,68,68,0.2); }
+  .tag-amber { background: rgba(245,158,11,0.12); color: #fbbf24; border: 1px solid rgba(245,158,11,0.2); }
+  .tag-blue { background: rgba(79,158,255,0.12); color: #60a5fa; border: 1px solid rgba(79,158,255,0.2); }
+  .tag-purple { background: rgba(124,58,237,0.12); color: #a78bfa; border: 1px solid rgba(124,58,237,0.2); }
+
+  /* ---- OUTPUT ---- */
+  .ai-output {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    font-size: 13px;
+    line-height: 1.7;
+    color: var(--text);
+    white-space: pre-wrap;
+    font-family: var(--font-body);
+    min-height: 60px;
+    position: relative;
+  }
+  .typing::after {
+    content: '▋';
+    color: var(--accent);
+    animation: blink 0.7s infinite;
+  }
+  @keyframes blink { 0%,100%{opacity:1;} 50%{opacity:0;} }
+
+  /* ---- PROGRESS BAR ---- */
+  .progress-bar-wrap { background: var(--surface3); border-radius: 100px; height: 8px; margin: 6px 0; overflow: hidden; }
+  .progress-bar-fill { height: 100%; border-radius: 100px; transition: width 1s cubic-bezier(0.4,0,0.2,1); }
+  .fill-blue { background: linear-gradient(90deg, var(--accent), #818cf8); }
+  .fill-green { background: linear-gradient(90deg, var(--green), #6ee7b7); }
+  .fill-amber { background: linear-gradient(90deg, var(--amber), #fde68a); }
+
+  /* ---- STEPS / ROADMAP ---- */
+  .roadmap-steps { position: relative; padding-left: 24px; }
+  .roadmap-steps::before { content:''; position:absolute; left:8px; top:0; bottom:0; width:2px; background: var(--border); border-radius:2px; }
+  .step {
+    position: relative;
+    margin-bottom: 20px;
+    padding: 14px 16px;
+    background: var(--surface2);
+    border-radius: 8px;
+    border: 1px solid var(--border);
+  }
+  .step::before {
+    content: '';
+    position: absolute;
+    left: -20px;
+    top: 18px;
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    background: var(--accent);
+    border: 2px solid var(--bg);
+    z-index: 1;
+  }
+  .step.done::before { background: var(--green); }
+  .step-title { font-family: var(--font-head); font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+  .step-desc { font-size: 13px; color: var(--text2); line-height: 1.5; }
+  .step-meta { font-size: 11px; color: var(--text3); font-family: var(--font-mono); margin-top: 6px; }
+
+  /* ---- MEMORY PROFILE ---- */
+  .profile-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .profile-item { background: var(--surface2); border-radius: 8px; padding: 12px; border: 1px solid var(--border); }
+  .profile-item-label { font-size: 11px; color: var(--text3); font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+  .profile-item-value { font-size: 14px; color: var(--text); font-weight: 500; }
+
+  /* ---- LOADER ---- */
+  .spinner {
+    display: inline-block;
+    width: 14px; height: 14px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ---- MARKET TREND ---- */
+  .trend-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .trend-row:last-child { border-bottom: none; }
+  .trend-badge {
+    font-size: 10px;
+    font-family: var(--font-mono);
+    padding: 2px 8px;
+    border-radius: 100px;
+    font-weight: 600;
+  }
+  .badge-hot { background: rgba(239,68,68,0.15); color: #f87171; }
+  .badge-rising { background: rgba(245,158,11,0.15); color: #fbbf24; }
+  .badge-stable { background: rgba(16,185,129,0.12); color: #34d399; }
+  .trend-name { font-size: 14px; color: var(--text); font-weight: 500; flex: 1; }
+  .trend-pct { font-size: 12px; font-family: var(--font-mono); color: var(--accent); }
+
+  /* ---- NOTIFICATION ---- */
+  .notif {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius);
+    padding: 14px 18px;
+    font-size: 13px;
+    color: var(--text);
+    max-width: 300px;
+    transform: translateX(150%);
+    transition: transform 0.4s cubic-bezier(0.4,0,0.2,1);
+    z-index: 999;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .notif.show { transform: translateX(0); }
+
+  /* ---- MISC ---- */
+  .row { display: flex; gap: 12px; align-items: flex-start; flex-wrap: wrap; }
+  .flex-1 { flex: 1; min-width: 200px; }
+  .section-title {
+    font-family: var(--font-head);
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--text);
+    margin-bottom: 4px;
+    letter-spacing: -0.5px;
+  }
+  .section-sub { font-size: 13px; color: var(--text2); margin-bottom: 24px; }
+  .divider { height: 1px; background: var(--border); margin: 20px 0; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 3px 10px; border-radius: 100px;
+    background: var(--surface3); color: var(--text2);
+    font-size: 12px; font-family: var(--font-mono);
+    border: 1px solid var(--border);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .chip:hover { border-color: var(--accent); color: var(--accent); }
+  .chip.selected { background: rgba(79,158,255,0.15); border-color: var(--accent); color: var(--accent); }
+  .empty-state { text-align:center; color: var(--text3); font-size: 14px; padding: 40px 20px; }
+  .info-box { background: rgba(79,158,255,0.07); border: 1px solid rgba(79,158,255,0.2); border-radius: 8px; padding: 12px 16px; font-size: 13px; color: var(--text); margin-bottom: 16px; line-height: 1.6; }
+  .warn-box { background: rgba(245,158,11,0.07); border: 1px solid rgba(245,158,11,0.2); border-radius: 8px; padding: 12px 16px; font-size: 13px; color: var(--text); margin-bottom: 16px; }
+
+  /* ---- CV UPLOAD ZONE ---- */
+  .upload-zone {
+    border: 2px dashed var(--border2);
+    border-radius: var(--radius);
+    padding: 32px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.25s;
+    background: rgba(79,158,255,0.03);
+    position: relative;
+    margin-bottom: 16px;
+  }
+  .upload-zone:hover, .upload-zone.dragover {
+    border-color: var(--accent);
+    background: rgba(79,158,255,0.08);
+    transform: translateY(-1px);
+  }
+  .upload-zone input[type="file"] {
+    position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+  }
+  .upload-icon { font-size: 36px; margin-bottom: 10px; display: block; }
+  .upload-title { font-family: var(--font-head); font-size: 16px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+  .upload-sub { font-size: 12px; color: var(--text3); font-family: var(--font-mono); }
+  .upload-formats { display: flex; gap: 8px; justify-content: center; margin-top: 12px; }
+  .format-badge {
+    font-size: 11px; font-family: var(--font-mono); font-weight: 600;
+    padding: 3px 10px; border-radius: 100px;
+    border: 1px solid var(--border);
+    color: var(--text2);
+  }
+
+  /* ---- CV PREVIEW ---- */
+  .cv-preview {
+    display: none;
+    background: var(--surface2);
+    border: 1px solid var(--green);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+  .cv-preview.visible { display: block; }
+  .cv-preview-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 12px;
+  }
+  .cv-file-info { display: flex; align-items: center; gap: 10px; }
+  .cv-file-icon {
+    width: 36px; height: 36px; border-radius: 8px;
+    background: rgba(16,185,129,0.15);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+  }
+  .cv-file-name { font-weight: 600; font-size: 14px; color: var(--text); }
+  .cv-file-meta { font-size: 11px; color: var(--text3); font-family: var(--font-mono); margin-top: 2px; }
+  .cv-parsed-text {
+    background: var(--surface3);
+    border-radius: 8px;
+    padding: 12px;
+    font-size: 12px;
+    color: var(--text2);
+    font-family: var(--font-mono);
+    line-height: 1.6;
+    max-height: 120px;
+    overflow-y: auto;
+    border: 1px solid var(--border);
+  }
+  .cv-status {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 12px; color: var(--green);
+    font-family: var(--font-mono); margin-bottom: 10px;
+  }
+  .cv-remove-btn {
+    background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.25);
+    color: #f87171; border-radius: 6px; padding: 4px 10px;
+    font-size: 12px; cursor: pointer; font-family: var(--font-body);
+    transition: all 0.2s;
+  }
+  .cv-remove-btn:hover { background: rgba(239,68,68,0.2); }
+
+  /* ---- PARSE PROGRESS ---- */
+  .parse-progress {
+    display: none;
+    align-items: center;
+    gap: 10px;
+    padding: 12px;
+    background: rgba(79,158,255,0.07);
+    border-radius: 8px;
+    border: 1px solid rgba(79,158,255,0.2);
+    margin-bottom: 16px;
+    font-size: 13px;
+    color: var(--accent);
+    font-family: var(--font-mono);
+  }
+  .parse-progress.visible { display: flex; }
+
+  /* ---- INPUT TOGGLE ---- */
+  .input-mode-toggle {
+    display: flex; gap: 4px; margin-bottom: 14px;
+    background: var(--surface2); padding: 4px; border-radius: 8px;
+    width: fit-content;
+  }
+  .mode-btn {
+    padding: 6px 14px; border-radius: 6px; font-size: 12px; font-weight: 600;
+    cursor: pointer; border: none; background: transparent;
+    color: var(--text2); font-family: var(--font-body); transition: all 0.2s;
+  }
+  .mode-btn.active { background: var(--accent); color: #fff; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">
+    <div class="logo-icon">⚡</div>
+    Skill<span>Sync</span> AI
+  </div>
+  <div class="header-status">
+    <div class="dot"></div>
+    <span id="header-user">No profile loaded</span>
+  </div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('input')">① Resume Input</div>
+  <div class="tab" onclick="switchTab('analysis')">② AI Analysis</div>
+  <div class="tab" onclick="switchTab('roadmap')">③ Training Plan</div>
+  <div class="tab" onclick="switchTab('progress')">④ Progress</div>
+  <div class="tab" onclick="switchTab('market')">⑤ Market Trends</div>
+  <div class="tab" onclick="switchTab('memory')">⑥ Memory</div>
+</div>
+
+<div class="main">
+
+  <!-- ======== SECTION 1: INPUT ======== -->
+  <div class="section active" id="sec-input">
+    <div class="section-title">Resume & Profile Input</div>
+    <div class="section-sub">Enter your skills and background, or paste your resume text</div>
+
+    <div class="card">
+      <div class="card-title"><span>👤</span> Personal Info</div>
+      <div class="row">
+        <div class="flex-1 form-group">
+          <label>Full Name</label>
+          <input type="text" id="inp-name" placeholder="e.g. Alex Johnson" />
+        </div>
+        <div class="flex-1 form-group">
+          <label>Email</label>
+          <input type="email" id="inp-email" placeholder="e.g. alex@email.com" />
+        </div>
+      </div>
+      <div class="row">
+        <div class="flex-1 form-group">
+          <label>Years of Experience</label>
+          <select id="inp-exp">
+            <option value="0">Fresher (0 years)</option>
+            <option value="1">1–2 years</option>
+            <option value="3">3–5 years</option>
+            <option value="6">6+ years</option>
+          </select>
+        </div>
+        <div class="flex-1 form-group">
+          <label>Target Job Role</label>
+          <select id="inp-role">
+            <option value="Data Analyst">Data Analyst</option>
+            <option value="Data Scientist">Data Scientist</option>
+            <option value="Business Analyst">Business Analyst</option>
+            <option value="ML Engineer">ML Engineer</option>
+            <option value="Full Stack Developer">Full Stack Developer</option>
+            <option value="Cloud Engineer">Cloud Engineer</option>
+            <option value="Product Manager">Product Manager</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Education Background</label>
+        <input type="text" id="inp-edu" placeholder="e.g. B.Sc Computer Science, University of Colombo" />
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span>📄</span> Resume / CV Input</div>
+
+      <!-- Mode Toggle -->
+      <div class="input-mode-toggle">
+        <button class="mode-btn active" id="mode-upload-btn" onclick="setInputMode('upload')">📎 Upload CV File</button>
+        <button class="mode-btn" id="mode-text-btn" onclick="setInputMode('text')">✏️ Paste Text</button>
+      </div>
+
+      <!-- UPLOAD MODE -->
+      <div id="upload-mode">
+        <!-- Parse Progress -->
+        <div class="parse-progress" id="parse-progress">
+          <span class="spinner"></span>
+          <span id="parse-progress-msg">Reading your CV...</span>
+        </div>
+
+        <!-- Drop Zone -->
+        <div class="upload-zone" id="upload-zone"
+             ondragover="handleDragOver(event)"
+             ondragleave="handleDragLeave(event)"
+             ondrop="handleDrop(event)">
+          <input type="file" id="cv-file-input" accept=".pdf,.doc,.docx,.txt" onchange="handleFileSelect(event)" />
+          <span class="upload-icon">📂</span>
+          <div class="upload-title">Drop your CV here or click to browse</div>
+          <div class="upload-sub">Supports PDF, DOCX, DOC, and TXT files</div>
+          <div class="upload-formats">
+            <span class="format-badge">PDF</span>
+            <span class="format-badge">DOCX</span>
+            <span class="format-badge">DOC</span>
+            <span class="format-badge">TXT</span>
+          </div>
+        </div>
+
+        <!-- CV Preview (shown after upload) -->
+        <div class="cv-preview" id="cv-preview">
+          <div class="cv-preview-header">
+            <div class="cv-file-info">
+              <div class="cv-file-icon" id="cv-file-icon">📄</div>
+              <div>
+                <div class="cv-file-name" id="cv-file-name">resume.pdf</div>
+                <div class="cv-file-meta" id="cv-file-meta">0 KB · Parsed</div>
+              </div>
+            </div>
+            <button class="cv-remove-btn" onclick="removeCV()">✕ Remove</button>
+          </div>
+          <div class="cv-status"><span>✓</span> CV parsed and ready — text extracted successfully</div>
+          <div style="font-size:12px;color:var(--text3);margin-bottom:6px;">Extracted text preview:</div>
+          <div class="cv-parsed-text" id="cv-parsed-text"></div>
+        </div>
+
+        <div class="info-box" style="margin-top:0;">💡 Your CV will be automatically parsed — skills, experience, and education are extracted and sent to the AI agents.</div>
+      </div>
+
+      <!-- TEXT MODE -->
+      <div id="text-mode" style="display:none;">
+        <div class="info-box">💡 Paste your full resume text OR list your skills separated by commas. SkillSync AI will extract and parse everything.</div>
+        <div class="form-group">
+          <label>Resume Text or Skills List</label>
+          <textarea id="inp-resume" placeholder="Paste your resume text here, OR list your skills like: Python, SQL, Excel, Machine Learning, Tableau, JavaScript..."></textarea>
+        </div>
+      </div>
+
+      <div style="margin-bottom:12px; margin-top:4px;">
+        <div style="font-size:13px;color:var(--text2);margin-bottom:8px;font-weight:500;">Quick-add popular skills:</div>
+        <div class="tags" id="quick-skills"></div>
+      </div>
+    </div>
+
+    <button class="btn btn-primary" id="analyze-btn" onclick="startAnalysis()">
+      ⚡ Analyze with AI Agents
+    </button>
+  </div>
+
+  <!-- ======== SECTION 2: ANALYSIS ======== -->
+  <div class="section" id="sec-analysis">
+    <div class="section-title">Multi-Agent Analysis</div>
+    <div class="section-sub">Three AI agents working together to evaluate your profile</div>
+
+    <div class="agents-row" id="agents-row">
+      <div class="agent-card" id="agent-recruiter">
+        <div class="agent-icon">🧑‍💼</div>
+        <div class="agent-name">Recruiter Agent</div>
+        <div class="agent-status" id="ag1-status">Standby</div>
+      </div>
+      <div class="agent-card" id="agent-trainer">
+        <div class="agent-icon">📚</div>
+        <div class="agent-name">Trainer Agent</div>
+        <div class="agent-status" id="ag2-status">Standby</div>
+      </div>
+      <div class="agent-card" id="agent-market">
+        <div class="agent-icon">📊</div>
+        <div class="agent-name">Market Analyst</div>
+        <div class="agent-status" id="ag3-status">Standby</div>
+      </div>
+    </div>
+
+    <div class="card" id="fit-card" style="display:none;">
+      <div class="card-title"><span>🎯</span> Job Fit Score</div>
+      <div class="score-circle" id="score-circle">
+        <div class="score-inner">
+          <div class="score-num" id="score-num">0%</div>
+          <div class="score-label">FIT SCORE</div>
+        </div>
+      </div>
+      <div style="text-align:center;margin-bottom:16px;">
+        <span id="score-verdict" style="font-family:var(--font-head);font-size:15px;font-weight:700;"></span>
+      </div>
+      <div class="divider"></div>
+      <div class="card-title" style="margin-top:12px;"><span>✅</span> Your Matched Skills</div>
+      <div class="tags" id="matched-skills"></div>
+      <div class="card-title" style="margin-top:16px;"><span>❌</span> Missing Skills</div>
+      <div class="tags" id="missing-skills"></div>
+      <div class="card-title" style="margin-top:16px;"><span>⭐</span> Trending Skills to Add</div>
+      <div class="tags" id="trending-add"></div>
+    </div>
+
+    <div class="card" id="recruiter-output-card" style="display:none;">
+      <div class="card-title"><span>🧑‍💼</span> Recruiter Agent — Reasoning</div>
+      <div class="ai-output" id="recruiter-output">Waiting...</div>
+    </div>
+  </div>
+
+  <!-- ======== SECTION 3: ROADMAP ======== -->
+  <div class="section" id="sec-roadmap">
+    <div class="section-title">Personalized Training Plan</div>
+    <div class="section-sub">Your AI-generated learning roadmap, prioritized by impact</div>
+
+    <div class="card" id="roadmap-card">
+      <div class="card-title"><span>🗺️</span> Trainer Agent — Learning Roadmap</div>
+      <div class="ai-output" id="trainer-output">Run analysis first to generate your roadmap.</div>
+    </div>
+
+    <div id="roadmap-steps-section" style="display:none;">
+      <div class="card">
+        <div class="card-title"><span>📋</span> Step-by-Step Learning Path</div>
+        <div class="roadmap-steps" id="roadmap-steps"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======== SECTION 4: PROGRESS ======== -->
+  <div class="section" id="sec-progress">
+    <div class="section-title">Track Your Progress</div>
+    <div class="section-sub">Mark skills as learned to update your fit score and recommendations</div>
+
+    <div class="card">
+      <div class="card-title"><span>➕</span> Add Completed Skill</div>
+      <div class="row" style="align-items:flex-end;">
+        <div class="flex-1 form-group" style="margin-bottom:0;">
+          <label>Skill Name</label>
+          <input type="text" id="new-skill-inp" placeholder="e.g. SQL, Power BI, Machine Learning..." />
+        </div>
+        <button class="btn btn-green" onclick="addSkill()">Add Skill</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span>📈</span> Progress Summary</div>
+      <div id="progress-summary">
+        <div class="empty-state">Complete your analysis first, then track skills here.</div>
+      </div>
+    </div>
+
+    <div class="card" id="progress-agent-card" style="display:none;">
+      <div class="card-title"><span>🤖</span> Trainer Agent — Updated Recommendations</div>
+      <div class="ai-output typing" id="progress-output">Agent will respond after you add a skill...</div>
+    </div>
+  </div>
+
+  <!-- ======== SECTION 5: MARKET ======== -->
+  <div class="section" id="sec-market">
+    <div class="section-title">Job Market Intelligence</div>
+    <div class="section-sub">Real-time market trends analyzed by the Market Analyst Agent</div>
+
+    <div class="card">
+      <div class="card-title"><span>🔥</span> Trending Skills 2024–2025</div>
+      <div id="market-trends-list"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span>📊</span> Market Analyst Agent</div>
+      <div class="ai-output" id="market-output">Run your analysis to get personalized market insights.</div>
+    </div>
+  </div>
+
+  <!-- ======== SECTION 6: MEMORY ======== -->
+  <div class="section" id="sec-memory">
+    <div class="section-title">Memory System</div>
+    <div class="section-sub">Your profile is persisted across sessions</div>
+
+    <div class="card" id="memory-profile-card">
+      <div class="card-title"><span>🧠</span> Stored Profile</div>
+      <div id="memory-content">
+        <div class="empty-state">No profile saved yet. Complete your analysis first.</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span>📜</span> Activity Log</div>
+      <div id="activity-log" style="font-size:13px;color:var(--text2);font-family:var(--font-mono);">
+        <div class="empty-state">No activity recorded yet.</div>
+      </div>
+    </div>
+
+    <button class="btn btn-secondary" onclick="clearMemory()">🗑️ Clear All Memory</button>
+  </div>
+
+</div><!-- /main -->
+
+<div class="notif" id="notif">
+  <span id="notif-icon">✅</span>
+  <span id="notif-msg">Done!</span>
+</div>
+
+<script>
+// ==================== DATA ====================
+const JOB_REQUIREMENTS = {
+  "Data Analyst": ["Python","SQL","Excel","Power BI","Tableau","Statistics","Data Visualization","Pandas","NumPy"],
+  "Data Scientist": ["Python","SQL","Machine Learning","Statistics","Deep Learning","Pandas","NumPy","TensorFlow","R","Data Visualization"],
+  "Business Analyst": ["SQL","Excel","Power BI","Tableau","Business Intelligence","Data Visualization","Communication","Project Management","Requirements Analysis"],
+  "ML Engineer": ["Python","Machine Learning","Deep Learning","TensorFlow","PyTorch","Docker","Kubernetes","MLOps","Cloud","SQL"],
+  "Full Stack Developer": ["JavaScript","React","Node.js","HTML","CSS","Python","SQL","REST APIs","Git","Docker"],
+  "Cloud Engineer": ["AWS","Azure","GCP","Docker","Kubernetes","Terraform","Linux","Python","CI/CD","Networking"],
+  "Product Manager": ["Product Strategy","Agile","JIRA","Data Analysis","Communication","SQL","A/B Testing","User Research","Roadmapping","Stakeholder Management"]
+};
+
+const MARKET_TRENDS = [
+  { name: "Generative AI / LLMs", badge: "hot", pct: "+340%", desc: "ChatGPT, Claude, prompt engineering" },
+  { name: "Cloud Computing (AWS/Azure)", badge: "hot", pct: "+210%", desc: "Multi-cloud infrastructure skills" },
+  { name: "Data Engineering", badge: "hot", pct: "+185%", desc: "Spark, dbt, Airflow, ETL pipelines" },
+  { name: "Machine Learning / MLOps", badge: "rising", pct: "+140%", desc: "Model deployment, monitoring" },
+  { name: "Power BI / Tableau", badge: "rising", pct: "+95%", desc: "Business intelligence dashboards" },
+  { name: "Python", badge: "stable", pct: "+60%", desc: "Top language across all data roles" },
+  { name: "Cybersecurity", badge: "rising", pct: "+130%", desc: "Zero-trust, SOC, threat analysis" },
+  { name: "SQL", badge: "stable", pct: "+45%", desc: "Universal data skill — always in demand" }
+];
+
+const QUICK_SKILLS = ["Python","SQL","Excel","Machine Learning","Tableau","Power BI","JavaScript","React","AWS","Docker","Statistics","R","Java","Git","Pandas"];
+
+// ==================== STATE ====================
+let appState = {
+  profile: null,
+  analysis: null,
+  roadmap: null,
+  learnedSkills: [],
+  activityLog: [],
+  currentTab: 'input'
+};
+
+// ==================== STORAGE ====================
+const STORAGE_KEY = 'skillsync_profile_v2';
+
+function saveMemory() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(appState)); } catch(e) {}
+}
+
+function loadMemory() {
+  try {
+    const ls = localStorage.getItem(STORAGE_KEY);
+    if (ls) {
+      appState = { ...appState, ...JSON.parse(ls) };
+      restoreUI();
+    }
+  } catch(e) {}
+}
+
+function logActivity(msg) {
+  const ts = new Date().toLocaleTimeString();
+  appState.activityLog.unshift(`[${ts}] ${msg}`);
+  if (appState.activityLog.length > 30) appState.activityLog.pop();
+  renderActivityLog();
+}
+
+// ==================== UI HELPERS ====================
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach((t,i) => {
+    const tabs = ['input','analysis','roadmap','progress','market','memory'];
+    t.classList.toggle('active', tabs[i] === tab);
+  });
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.getElementById('sec-'+tab).classList.add('active');
+  appState.currentTab = tab;
+}
+
+function showNotif(msg, icon='✅') {
+  const n = document.getElementById('notif');
+  document.getElementById('notif-msg').textContent = msg;
+  document.getElementById('notif-icon').textContent = icon;
+  n.classList.add('show');
+  setTimeout(() => n.classList.remove('show'), 3000);
+}
+
+function setAgentStatus(id, status, state) {
+  const el = document.getElementById(id);
+  const st = document.getElementById(status);
+  el.className = 'agent-card ' + (state === 'working' ? 'working' : state === 'done' ? 'done' : '');
+  st.className = 'agent-status ' + state;
+  st.textContent = state === 'working' ? '⚙ Processing...' : state === 'done' ? '✓ Complete' : 'Standby';
+}
+
+function extractSkillsFromText(text) {
+  const all_skills = [...new Set(Object.values(JOB_REQUIREMENTS).flat())];
+  const extra = ["JavaScript","React","Node.js","HTML","CSS","Git","Docker","Kubernetes","Linux","Java","C++","C#","PHP","Swift","Kotlin","Go","Rust","AWS","Azure","GCP","Terraform","Spark","Kafka","Airflow","dbt","Power BI","Tableau","Excel","Word","PowerPoint","Agile","Scrum","JIRA","Communication","Project Management","A/B Testing","Product Strategy","User Research"];
+  const searchable = [...new Set([...all_skills,...extra])];
+  const found = [];
+  searchable.forEach(s => {
+    if (text.toLowerCase().includes(s.toLowerCase())) found.push(s);
+  });
+  return found;
+}
+
+function computeScore(userSkills, role) {
+  const required = JOB_REQUIREMENTS[role] || [];
+  const matched = required.filter(s => userSkills.map(x=>x.toLowerCase()).includes(s.toLowerCase()));
+  const missing = required.filter(s => !userSkills.map(x=>x.toLowerCase()).includes(s.toLowerCase()));
+  const score = Math.round((matched.length / required.length) * 100);
+  return { score, matched, missing, required };
+}
+
+function updateScoreCircle(pct) {
+  const circle = document.getElementById('score-circle');
+  const color = pct >= 70 ? 'var(--green)' : pct >= 40 ? 'var(--amber)' : 'var(--red)';
+  circle.style.background = `conic-gradient(${color} ${pct}%, var(--surface3) ${pct}%)`;
+  document.getElementById('score-num').textContent = pct + '%';
+  const verdict = pct >= 80 ? '🏆 Excellent Match' : pct >= 60 ? '👍 Good Match' : pct >= 40 ? '📈 Developing' : '🚀 Just Getting Started';
+  document.getElementById('score-verdict').textContent = verdict;
+  document.getElementById('score-verdict').style.color = color;
+}
+
+// ==================== MAIN ANALYSIS ====================
+async function startAnalysis() {
+  const name = document.getElementById('inp-name').value.trim() || 'User';
+  const email = document.getElementById('inp-email').value.trim();
+  const exp = document.getElementById('inp-exp').value;
+  const role = document.getElementById('inp-role').value;
+  const edu = document.getElementById('inp-edu').value.trim();
+
+  // Get resume text from whichever mode is active
+  let resumeText = '';
+  if (currentInputMode === 'upload') {
+    resumeText = cvExtractedText.trim();
+    if (!resumeText) { showNotif('Please upload your CV file first!', '⚠️'); return; }
+  } else {
+    resumeText = document.getElementById('inp-resume').value.trim();
+    if (!resumeText) { showNotif('Please enter your resume or skills first!', '⚠️'); return; }
+  }
+
+  // Also sync textarea for consistency
+  const ta = document.getElementById('inp-resume');
+  if (ta && !ta.value && resumeText) ta.value = resumeText;
+
+  const btn = document.getElementById('analyze-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Agents Working...';
+
+  switchTab('analysis');
+
+  const extractedSkills = extractSkillsFromText(resumeText);
+  const { score, matched, missing, required } = computeScore(extractedSkills, role);
+
+  appState.profile = { name, email, exp, role, edu, resumeText, extractedSkills, score, matched, missing, timestamp: new Date().toISOString() };
+
+  document.getElementById('header-user').textContent = name + ' · ' + role;
+  document.getElementById('fit-card').style.display = 'block';
+  document.getElementById('recruiter-output-card').style.display = 'block';
+
+  updateScoreCircle(score);
+
+  const matchedEl = document.getElementById('matched-skills');
+  matchedEl.innerHTML = matched.length ? matched.map(s=>`<span class="tag tag-green">✓ ${s}</span>`).join('') : '<span style="color:var(--text3);font-size:13px;">None matched yet</span>';
+
+  const missingEl = document.getElementById('missing-skills');
+  missingEl.innerHTML = missing.map(s=>`<span class="tag tag-red">✗ ${s}</span>`).join('');
+
+  const trendingSkills = ["Power BI","Machine Learning","Cloud","Python","SQL","Deep Learning"];
+  const trendAdd = trendingSkills.filter(s => !extractedSkills.map(x=>x.toLowerCase()).includes(s.toLowerCase())).slice(0,4);
+  document.getElementById('trending-add').innerHTML = trendAdd.map(s=>`<span class="tag tag-purple">⬆ ${s}</span>`).join('');
+
+  setAgentStatus('agent-recruiter','ag1-status','working');
+  await runRecruiterAgent(name, role, extractedSkills, matched, missing, score, exp, edu);
+  setAgentStatus('agent-recruiter','ag1-status','done');
+
+  setAgentStatus('agent-trainer','ag2-status','working');
+  await runTrainerAgent(name, role, missing, extractedSkills, score);
+  setAgentStatus('agent-trainer','ag2-status','done');
+
+  setAgentStatus('agent-market','ag3-status','working');
+  renderMarketTrends();
+  await runMarketAgent(name, role, extractedSkills, score);
+  setAgentStatus('agent-market','ag3-status','done');
+
+  saveMemory();
+  renderMemory();
+  logActivity(`Analysis completed for ${name} targeting ${role} — Score: ${score}%`);
+
+  btn.disabled = false;
+  btn.innerHTML = '⚡ Analyze with AI Agents';
+  showNotif('Analysis complete! Check all tabs for results.', '🎉');
+}
+
+async function streamToElement(elementId, text) {
+  const el = document.getElementById(elementId);
+  el.textContent = '';
+  el.classList.add('typing');
+  const words = text.split(' ');
+  for (let i = 0; i < words.length; i++) {
+    el.textContent += (i > 0 ? ' ' : '') + words[i];
+    await new Promise(r => setTimeout(r, 18));
+  }
+  el.classList.remove('typing');
+}
+
+async function callClaude(systemPrompt, userMsg) {
+  try {
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 1000,
+        system: systemPrompt,
+        messages: [{ role: "user", content: userMsg }]
+      })
+    });
+    const data = await response.json();
+    return data.content?.map(c => c.text || '').join('') || "Agent response unavailable.";
+  } catch(e) {
+    return "Agent is processing your profile. Please check results in other tabs.";
+  }
+}
+
+async function runRecruiterAgent(name, role, skills, matched, missing, score, exp, edu) {
+  const system = `You are the Recruiter Agent in SkillSync AI, a multi-agent career coaching system. Your job is to evaluate candidates for specific job roles. Be analytical, specific, and reasoning-driven. Always explain WHY — show your reasoning step by step. Keep response under 200 words. Be direct, insightful, and encouraging.`;
+  const msg = `Candidate: ${name}
+Target Role: ${role}
+Experience: ${exp} years
+Education: ${edu || 'Not specified'}
+Skills they have: ${skills.join(', ') || 'None detected'}
+Matched skills: ${matched.join(', ') || 'None'}
+Missing skills: ${missing.slice(0,5).join(', ') || 'None'}
+Fit Score: ${score}%
+
+Provide your recruiter evaluation. Explain the fit score reasoning, highlight their strongest assets, and identify the TOP 2-3 missing skills that matter most for this role. End with a clear recommendation.`;
+  const result = await callClaude(system, msg);
+  await streamToElement('recruiter-output', result);
+  appState.analysis = { recruiterNote: result };
+}
+
+async function runTrainerAgent(name, role, missing, currentSkills, score) {
+  const system = `You are the Trainer Agent in SkillSync AI. Your job is to create personalized learning roadmaps. Be specific about resources, time estimates, and learning order. Focus on the MOST impactful skills first. Keep response under 250 words. Be motivating and practical.`;
+  const msg = `Candidate: ${name}
+Target Role: ${role}
+Current Skills: ${currentSkills.join(', ') || 'None'}
+Missing Critical Skills: ${missing.slice(0,6).join(', ') || 'None'}
+Current Fit Score: ${score}%
+
+Create a step-by-step learning roadmap. For each skill suggest: what to learn, a free resource (course/platform), and estimated time. Order them by ROI — which skill will increase job chances the most if learned first? Also include one project idea that will help them practice multiple skills.`;
+  const result = await callClaude(system, msg);
+  await streamToElement('trainer-output', result);
+  appState.roadmap = result;
+  buildRoadmapSteps(missing.slice(0,5), role);
+}
+
+async function runMarketAgent(name, role, skills, score) {
+  const system = `You are the Market Analyst Agent in SkillSync AI. You analyze job market trends and give career intelligence. Be data-driven but conversational. Keep under 200 words. Give specific, actionable market insights.`;
+  const msg = `Candidate profile: ${name}, targeting ${role}
+Current skills: ${skills.join(', ') || 'None'}
+Fit score: ${score}%
+Current market context: 2024-2025 job market
+
+Give market intelligence: Is ${role} in demand? What skills are exploding in demand? What should this candidate prioritize to be most employable in the next 12 months? Name specific platforms, tools, or certifications that employers are specifically looking for.`;
+  const result = await callClaude(system, msg);
+  await streamToElement('market-output', result);
+}
+
+function buildRoadmapSteps(missing, role) {
+  const container = document.getElementById('roadmap-steps');
+  const section = document.getElementById('roadmap-steps-section');
+  if (!missing.length) return;
+
+  const resources = {
+    "Python": { res: "Python.org / freeCodeCamp", time: "3–4 weeks" },
+    "SQL": { res: "SQLZoo / Mode Analytics", time: "2–3 weeks" },
+    "Machine Learning": { res: "Andrew Ng Coursera / fast.ai", time: "6–8 weeks" },
+    "Power BI": { res: "Microsoft Learn / YouTube", time: "2–3 weeks" },
+    "Tableau": { res: "Tableau Public / Udemy", time: "2 weeks" },
+    "Excel": { res: "Excel Jet / LinkedIn Learning", time: "1–2 weeks" },
+    "Docker": { res: "Docker Docs / KodeKloud", time: "2–3 weeks" },
+    "AWS": { res: "AWS Free Tier / A Cloud Guru", time: "4–6 weeks" },
+    "Deep Learning": { res: "fast.ai / DeepLearning.AI", time: "6–8 weeks" },
+    "default": { res: "Coursera / Udemy / YouTube", time: "3–4 weeks" }
+  };
+
+  container.innerHTML = missing.map((skill, i) => {
+    const info = resources[skill] || resources['default'];
+    return `<div class="step ${appState.learnedSkills.includes(skill) ? 'done' : ''}">
+      <div class="step-title">${i+1}. Learn ${skill}</div>
+      <div class="step-desc">Master ${skill} to significantly improve your ${role} match score.</div>
+      <div class="step-meta">📚 ${info.res} · ⏱ ${info.time}</div>
+    </div>`;
+  }).join('');
+
+  section.style.display = 'block';
+}
+
+// ==================== PROGRESS ====================
+async function addSkill() {
+  const input = document.getElementById('new-skill-inp');
+  const skill = input.value.trim();
+  if (!skill) { showNotif('Enter a skill name first', '⚠️'); return; }
+
+  if (!appState.learnedSkills.includes(skill)) {
+    appState.learnedSkills.push(skill);
+    if (appState.profile) {
+      appState.profile.extractedSkills.push(skill);
+      const { score, matched, missing } = computeScore(appState.profile.extractedSkills, appState.profile.role);
+      appState.profile.score = score;
+      appState.profile.matched = matched;
+      appState.profile.missing = missing;
+      updateScoreCircle(score);
+    }
+  }
+
+  input.value = '';
+  renderProgress();
+  logActivity(`New skill added: ${skill}`);
+  saveMemory();
+  showNotif(`"${skill}" added to your profile!`, '✨');
+
+  document.getElementById('progress-agent-card').style.display = 'block';
+  if (appState.profile) {
+    const system = `You are the Trainer Agent. A candidate just learned a new skill. Celebrate briefly, tell them how it changes their score, and give ONE specific next recommendation. Be concise (under 100 words) and encouraging.`;
+    const msg = `Candidate: ${appState.profile.name}
+Newly learned skill: ${skill}
+Role: ${appState.profile.role}
+New fit score: ${appState.profile.score}%
+Remaining missing skills: ${appState.profile.missing?.slice(0,4).join(', ')}`;
+    const result = await callClaude(system, msg);
+    await streamToElement('progress-output', result);
+  }
+}
+
+function renderProgress() {
+  const container = document.getElementById('progress-summary');
+  if (!appState.profile) {
+    container.innerHTML = '<div class="empty-state">Complete your analysis first.</div>';
+    return;
+  }
+  const { score, matched, missing, role } = appState.profile;
+  const total = JOB_REQUIREMENTS[role]?.length || 10;
+
+  container.innerHTML = `
+    <div style="margin-bottom:20px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+        <span style="font-size:13px;color:var(--text2);">Job Fit Score</span>
+        <span style="font-size:14px;font-weight:600;color:var(--accent);">${score}%</span>
+      </div>
+      <div class="progress-bar-wrap"><div class="progress-bar-fill fill-blue" style="width:${score}%"></div></div>
+    </div>
+    <div style="margin-bottom:20px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+        <span style="font-size:13px;color:var(--text2);">Skills Matched</span>
+        <span style="font-size:14px;font-weight:600;color:var(--green);">${matched?.length || 0} / ${total}</span>
+      </div>
+      <div class="progress-bar-wrap"><div class="progress-bar-fill fill-green" style="width:${Math.round(((matched?.length||0)/total)*100)}%"></div></div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text2);">
+      Skills learned in this session:
+      ${appState.learnedSkills.length ? appState.learnedSkills.map(s=>`<span class="tag tag-blue">+ ${s}</span>`).join('') : '<span style="color:var(--text3)">None yet</span>'}
+    </div>`;
+}
+
+// ==================== MARKET ============================
+function renderMarketTrends() {
+  const container = document.getElementById('market-trends-list');
+  container.innerHTML = MARKET_TRENDS.map(t => `
+    <div class="trend-row">
+      <span class="trend-badge badge-${t.badge}">${t.badge.toUpperCase()}</span>
+      <span class="trend-name">${t.name}</span>
+      <span style="font-size:12px;color:var(--text3);flex:1;">${t.desc}</span>
+      <span class="trend-pct">${t.pct}</span>
+    </div>`).join('');
+}
+
+// ==================== MEMORY UI ====================
+function renderMemory() {
+  const container = document.getElementById('memory-content');
+  if (!appState.profile) {
+    container.innerHTML = '<div class="empty-state">No profile saved yet.</div>';
+    return;
+  }
+  const p = appState.profile;
+  container.innerHTML = `
+    <div class="profile-grid">
+      <div class="profile-item">
+        <div class="profile-item-label">Name</div>
+        <div class="profile-item-value">${p.name}</div>
+      </div>
+      <div class="profile-item">
+        <div class="profile-item-label">Target Role</div>
+        <div class="profile-item-value">${p.role}</div>
+      </div>
+      <div class="profile-item">
+        <div class="profile-item-label">Fit Score</div>
+        <div class="profile-item-value" style="color:var(--accent)">${p.score}%</div>
+      </div>
+      <div class="profile-item">
+        <div class="profile-item-label">Experience</div>
+        <div class="profile-item-value">${p.exp} yrs</div>
+      </div>
+      <div class="profile-item" style="grid-column:1/-1">
+        <div class="profile-item-label">Detected Skills (${p.extractedSkills?.length || 0})</div>
+        <div class="tags" style="margin-top:6px;">${(p.extractedSkills||[]).map(s=>`<span class="tag tag-blue">${s}</span>`).join('')}</div>
+      </div>
+      <div class="profile-item" style="grid-column:1/-1">
+        <div class="profile-item-label">Skills Learned This Session</div>
+        <div class="tags" style="margin-top:6px;">${appState.learnedSkills.length ? appState.learnedSkills.map(s=>`<span class="tag tag-green">+ ${s}</span>`).join('') : '<span style="color:var(--text3)">None yet</span>'}</div>
+      </div>
+      <div class="profile-item" style="grid-column:1/-1">
+        <div class="profile-item-label">Last Updated</div>
+        <div class="profile-item-value" style="font-family:var(--font-mono);font-size:12px;">${new Date(p.timestamp).toLocaleString()}</div>
+      </div>
+    </div>`;
+}
+
+function renderActivityLog() {
+  const container = document.getElementById('activity-log');
+  if (!appState.activityLog.length) {
+    container.innerHTML = '<div class="empty-state">No activity recorded yet.</div>';
+    return;
+  }
+  container.innerHTML = appState.activityLog.map(a =>
+    `<div style="padding:5px 0;border-bottom:1px solid var(--border);color:var(--text2);">${a}</div>`
+  ).join('');
+}
+
+function clearMemory() {
+  appState = { profile: null, analysis: null, roadmap: null, learnedSkills: [], activityLog: [], currentTab: 'input' };
+  try { localStorage.removeItem(STORAGE_KEY); } catch(e) {}
+  renderMemory();
+  renderActivityLog();
+  document.getElementById('header-user').textContent = 'No profile loaded';
+  showNotif('Memory cleared', '🗑️');
+  logActivity('Memory cleared by user');
+}
+
+function restoreUI() {
+  if (appState.profile) {
+    document.getElementById('header-user').textContent = appState.profile.name + ' · ' + appState.profile.role;
+    document.getElementById('inp-name').value = appState.profile.name;
+    document.getElementById('inp-email').value = appState.profile.email || '';
+    document.getElementById('inp-exp').value = appState.profile.exp;
+    document.getElementById('inp-role').value = appState.profile.role;
+    document.getElementById('inp-edu').value = appState.profile.edu || '';
+    document.getElementById('inp-resume').value = appState.profile.resumeText || '';
+    renderProgress();
+    renderMemory();
+    renderActivityLog();
+    showNotif(`Welcome back, ${appState.profile.name}! Profile loaded.`, '🧠');
+    logActivity(`Session resumed for ${appState.profile.name}`);
+  }
+}
+
+// ==================== QUICK SKILLS ====================
+function initQuickSkills() {
+  const container = document.getElementById('quick-skills');
+  container.innerHTML = QUICK_SKILLS.map(s =>
+    `<span class="chip" onclick="toggleQuickSkill(this,'${s}')">${s}</span>`
+  ).join('');
+}
+
+function toggleQuickSkill(el, skill) {
+  el.classList.toggle('selected');
+  const ta = document.getElementById('inp-resume');
+  const skills = ta.value.split(',').map(s=>s.trim()).filter(Boolean);
+  if (el.classList.contains('selected')) {
+    if (!skills.includes(skill)) skills.push(skill);
+  } else {
+    const idx = skills.indexOf(skill);
+    if (idx > -1) skills.splice(idx,1);
+  }
+  ta.value = skills.join(', ');
+}
+
+// ==================== CV UPLOAD ====================
+let cvExtractedText = '';
+let currentInputMode = 'upload';
+
+// Set PDF.js worker
+if (typeof pdfjsLib !== 'undefined') {
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+}
+
+function setInputMode(mode) {
+  currentInputMode = mode;
+  document.getElementById('mode-upload-btn').classList.toggle('active', mode === 'upload');
+  document.getElementById('mode-text-btn').classList.toggle('active', mode === 'text');
+  document.getElementById('upload-mode').style.display = mode === 'upload' ? 'block' : 'none';
+  document.getElementById('text-mode').style.display = mode === 'text' ? 'block' : 'none';
+}
+
+function handleDragOver(e) {
+  e.preventDefault();
+  document.getElementById('upload-zone').classList.add('dragover');
+}
+
+function handleDragLeave(e) {
+  document.getElementById('upload-zone').classList.remove('dragover');
+}
+
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('upload-zone').classList.remove('dragover');
+  const file = e.dataTransfer.files[0];
+  if (file) processFile(file);
+}
+
+function handleFileSelect(e) {
+  const file = e.target.files[0];
+  if (file) processFile(file);
+}
+
+async function processFile(file) {
+  const allowedTypes = ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'application/msword', 'text/plain'];
+  const ext = file.name.split('.').pop().toLowerCase();
+  const allowed = ['pdf','docx','doc','txt'];
+
+  if (!allowed.includes(ext)) {
+    showNotif('Unsupported file type. Please upload PDF, DOCX, DOC, or TXT.', '⚠️');
+    return;
+  }
+
+  showParseProgress(`Reading ${file.name}...`);
+  logActivity(`CV file uploaded: ${file.name}`);
+
+  try {
+    let text = '';
+    if (ext === 'pdf') {
+      text = await extractPDF(file);
+    } else if (ext === 'docx') {
+      text = await extractDOCX(file);
+    } else if (ext === 'doc') {
+      text = await extractDOCX(file); // mammoth handles .doc too
+    } else if (ext === 'txt') {
+      text = await file.text();
+    }
+
+    if (!text || text.trim().length < 20) {
+      hideParseProgress();
+      showNotif('Could not extract text. Try a different file or use paste mode.', '⚠️');
+      return;
+    }
+
+    cvExtractedText = text;
+
+    // Auto-fill resume textarea too so existing logic works
+    const ta = document.getElementById('inp-resume');
+    if (ta) ta.value = text;
+
+    // Show preview
+    const preview = document.getElementById('cv-preview');
+    const zone = document.getElementById('upload-zone');
+    preview.classList.add('visible');
+    zone.style.display = 'none';
+
+    document.getElementById('cv-file-name').textContent = file.name;
+    const sizeKB = (file.size / 1024).toFixed(1);
+    document.getElementById('cv-file-meta').textContent = `${sizeKB} KB · ${ext.toUpperCase()} · ${text.split(/\s+/).length} words extracted`;
+    document.getElementById('cv-file-icon').textContent = ext === 'pdf' ? '📕' : ext === 'txt' ? '📝' : '📘';
+
+    // Preview first 400 chars
+    document.getElementById('cv-parsed-text').textContent = text.slice(0, 400) + (text.length > 400 ? '…' : '');
+
+    // Auto-extract visible skills and highlight chips
+    const detectedSkills = extractSkillsFromText(text);
+    detectedSkills.forEach(skill => {
+      const chips = document.querySelectorAll('.chip');
+      chips.forEach(chip => {
+        if (chip.textContent.trim() === skill) chip.classList.add('selected');
+      });
+    });
+
+    hideParseProgress();
+    showNotif(`CV parsed! ${detectedSkills.length} skills detected.`, '✅');
+    logActivity(`CV parsed: ${detectedSkills.length} skills extracted`);
+
+  } catch (err) {
+    hideParseProgress();
+    console.error('CV parse error:', err);
+    showNotif('Error reading file. Try pasting text instead.', '❌');
+  }
+}
+
+async function extractPDF(file) {
+  const arrayBuffer = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+  let fullText = '';
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const page = await pdf.getPage(i);
+    const content = await page.getTextContent();
+    const pageText = content.items.map(item => item.str).join(' ');
+    fullText += pageText + '\n';
+  }
+  return fullText;
+}
+
+async function extractDOCX(file) {
+  const arrayBuffer = await file.arrayBuffer();
+  const result = await mammoth.extractRawText({ arrayBuffer });
+  return result.value;
+}
+
+function showParseProgress(msg) {
+  const el = document.getElementById('parse-progress');
+  document.getElementById('parse-progress-msg').textContent = msg;
+  el.classList.add('visible');
+}
+
+function hideParseProgress() {
+  document.getElementById('parse-progress').classList.remove('visible');
+}
+
+function removeCV() {
+  cvExtractedText = '';
+  const preview = document.getElementById('cv-preview');
+  const zone = document.getElementById('upload-zone');
+  preview.classList.remove('visible');
+  zone.style.display = 'block';
+  document.getElementById('cv-file-input').value = '';
+  const ta = document.getElementById('inp-resume');
+  if (ta) ta.value = '';
+  // Deselect chips
+  document.querySelectorAll('.chip').forEach(c => c.classList.remove('selected'));
+  showNotif('CV removed. Upload a new one or switch to paste mode.', '🗑️');
+}
+
+// ==================== INIT ====================
+initQuickSkills();
+renderMarketTrends();
+loadMemory();
+</script>
+</body>
+</html>
